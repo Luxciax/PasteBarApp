@@ -25,6 +25,7 @@ export const ClipFormAfterInputKeyPress = ['Tab', 'Enter', 'TabTab', 'TabEnter']
 export const ClipFormKeyPressDisplayValueMap = {
   Tab: 'Tab',
   Enter: 'Enter',
+  EnterEnter: '2 Enters',
   TabTab: '2 Tabs',
   TabTabTab: '3 Tabs',
   TabEnter: 'Tab, Enter',

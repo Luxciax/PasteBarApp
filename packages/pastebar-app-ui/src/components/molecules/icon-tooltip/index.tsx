@@ -13,7 +13,7 @@ type IconTooltipProps = TooltipProps & {
 const IconTooltip: React.FC<IconTooltipProps> = ({
   type = 'info',
   size = 16,
-  content,
+  text,
   ...props
 }) => {
   const icon = (type: IconTooltipProps['type']) => {
@@ -28,7 +28,7 @@ const IconTooltip: React.FC<IconTooltipProps> = ({
   }
 
   return (
-    <Tooltip content={content} {...props}>
+    <Tooltip text={text} {...props}>
       {icon(type)}
     </Tooltip>
   )

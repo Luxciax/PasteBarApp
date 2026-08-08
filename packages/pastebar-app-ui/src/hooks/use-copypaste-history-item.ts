@@ -20,7 +20,7 @@ type UseClipboardPasteProps = {
 export const copiedItem = signal<UniqueIdentifier>('')
 
 export const useCopyPasteHistoryItem = ({
-  delay = 800,
+  delay = 0,
   onCopied = () => {},
 }: UseClipboardProps): [
   UniqueIdentifier,
@@ -29,27 +29,34 @@ export const useCopyPasteHistoryItem = ({
 ] => {
   const { copyPasteSequencePinnedDelay, copyPasteSequenceIsReversOrder } =
     useAtomValue(settingsStoreAtom)
+
+  const copyHistoryItem = (historyId: UniqueIdentifier) => {
+    invoke('copy_history_item', { historyId })
+      .then(res => {
+        if (res === 'ok') {
+          requestAnimationFrame(() => {
+            copiedItem.value = ''
+            onCopied()
+          })
+        } else {
+          copiedItem.value = ''
+          console.error('Failed to copy history item', res)
+        }
+      })
+      .catch(err => {
+        copiedItem.value = ''
+        console.error('Failed to copy history item', err)
+      })
+  }
+
   const handleCopy = (historyId: UniqueIdentifier) => {
     if (historyId && !copiedItem.value) {
       copiedItem.value = historyId
-      setTimeout(() => {
-        invoke('copy_history_item', { historyId })
-          .then(res => {
-            if (res === 'ok') {
-              requestAnimationFrame(() => {
-                copiedItem.value = ''
-                onCopied()
-              })
-            } else {
-              copiedItem.value = ''
-              console.error('Failed to copy history item', res)
-            }
-          })
-          .catch(err => {
-            copiedItem.value = ''
-            console.error('Failed to copy history item', err)
-          })
-      }, delay)
+      if (delay > 0) {
+        setTimeout(() => copyHistoryItem(historyId), delay)
+      } else {
+        copyHistoryItem(historyId)
+      }
     }
   }
 

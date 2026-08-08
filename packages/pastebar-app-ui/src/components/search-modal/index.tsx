@@ -9,7 +9,7 @@ import useKeyboardNavigationList from './use-keyboard-navigation-list'
 
 // const getTotal = (...lists) => lists.reduce((total, list = []) => total + list.length, 0)
 
-const SearchModal = ({ handleClose }) => {
+const SearchModal = ({ handleClose }: { handleClose: () => void }) => {
   const [q, setQ] = React.useState('')
   // const query = useDebounce(q, 500)
   // const onChange = e => setQ(e.target.value)

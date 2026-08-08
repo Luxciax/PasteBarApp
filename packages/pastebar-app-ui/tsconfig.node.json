@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "composite": true,
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "outDir": ".tsbuild/node",
+    "tsBuildInfoFile": ".tsbuild/tsconfig.node.tsbuildinfo"
   },
-  "include": ["vite.config.mts", "src/lib/i18n-vite-loaded/loader.ts"]
+  "include": ["vite.config.mts", "src/lib/i18n-vite-loaded/**/*.ts"]
 }

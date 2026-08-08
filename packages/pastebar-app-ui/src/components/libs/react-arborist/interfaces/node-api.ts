@@ -27,7 +27,7 @@ export class NodeApi<T = any> {
   constructor(params: Params<T>) {
     this.tree = params.tree
     this.id = params.id
-    this.data = params.data
+    this.data = params.data as Record<string, any>
     this.level = params.level
     this.children = params.children
     this.parent = params.parent
@@ -63,7 +63,7 @@ export class NodeApi<T = any> {
   }
 
   get isEditable() {
-    return this.tree.isEditable(this.data)
+    return this.tree.isEditable(this.data as T)
   }
 
   get isEditing() {
@@ -186,7 +186,7 @@ export class NodeApi<T = any> {
   }
 
   clone() {
-    return new NodeApi<T>({ ...this })
+    return new NodeApi<T>({ ...this, data: this.data as T })
   }
 
   edit() {

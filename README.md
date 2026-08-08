@@ -1,8 +1,18 @@
 # 📋 PasteBar - Limitless, Free Clipboard Manager for Mac and Windows
 
 [![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/PasteBar/PasteBarApp/releases)
-[![License](https://img.shields.io/badge/license-Open%20Source-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Open%20Source-green.svg)](CC-LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-lightgrey.svg)](https://www.pastebar.app)
+
+## About PasteBarApp-Fixed
+
+This repository is a secondary repair fork based on the upstream
+[PasteBar/PasteBarApp](https://github.com/PasteBar/PasteBarApp). It keeps the upstream project
+history, attribution, and licensing while carrying focused reliability fixes, especially for
+Windows global hotkeys and clipboard copy/paste timing.
+
+Upstream source: https://github.com/PasteBar/PasteBarApp
+Original project license: [Creative Commons Attribution-NonCommercial (CC BY-NC) License with Limited Commercial Use Exception](CC-LICENSE)
 
 <a href="https://www.pastebar.app"><img width="1144" alt="Screenshot 2024-07-25 at 14 11 09" src="https://github.com/user-attachments/assets/ce861bdb-d7df-4944-885e-12d37177e56d"></a>
 
@@ -126,7 +136,7 @@ We welcome contributions! PasteBar is open-source and community-driven. Feel fre
 
 ## 📄 License
 
-Open Source, Creative Commons Attribution-NonCommercial (CC BY-NC) License with Limited Commercial Use Exception. See the [LICENSE](LICENSE) file for details.
+Open Source, Creative Commons Attribution-NonCommercial (CC BY-NC) License with Limited Commercial Use Exception. See the original upstream [CC-LICENSE](CC-LICENSE) file for details.
 
 ---
 

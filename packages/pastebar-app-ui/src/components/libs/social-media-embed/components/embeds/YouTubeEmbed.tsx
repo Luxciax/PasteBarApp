@@ -2,7 +2,6 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { DivPropsWithoutRef } from 'react-html-props'
 import YouTube, { YouTubeProps } from 'react-youtube'
-import { Options } from 'youtube-player/dist/types'
 
 import { PlaceholderEmbed, PlaceholderEmbedProps } from '../placeholder/PlaceholderEmbed'
 import { EmbedStyle } from './EmbedStyle'
@@ -56,7 +55,7 @@ export const YouTubeEmbed = ({
   const isPercentageWidth = !!width?.toString().includes('%')
   const isPercentageHeight = !!height?.toString().includes('%')
 
-  let opts: Options = {}
+  let opts: NonNullable<YouTubeProps['opts']> = {}
   if (!!start) {
     opts.playerVars = { start }
   }
@@ -115,7 +114,7 @@ export const YouTubeEmbed = ({
           className={youTubeProps?.className ?? 'youtube-iframe'}
           videoId={youTubeProps?.videoId ?? videoId}
           opts={opts}
-          onReady={e => {
+          onReady={(e: Parameters<NonNullable<YouTubeProps['onReady']>>[0]) => {
             setReady(true)
             if (youTubeProps && youTubeProps.onReady) {
               youTubeProps?.onReady(e)

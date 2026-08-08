@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-// @ts-expect-error no types
 import globAll from 'glob-all'
 import * as yaml from 'js-yaml'
 

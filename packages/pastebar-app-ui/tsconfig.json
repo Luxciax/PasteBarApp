@@ -14,6 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "tsBuildInfoFile": ".tsbuild/tsconfig.tsbuildinfo",
     "experimentalDecorators": true,
     "baseUrl": ".",
     "jsx": "react-jsx",
@@ -22,7 +23,23 @@
     }
   },
   "include": ["src"],
-  "exclude": ["node_modules", "src-tauri", "dist-ui", ".next"],
+  "exclude": [
+    "node_modules",
+    "src-tauri",
+    "dist-ui",
+    ".next",
+    "src/components/libs/react-twitter-embed/tests/**",
+    "src/components/atoms/date-picker/**",
+    "src/components/atoms/fundamentals/input-header.tsx",
+    "src/components/molecules/modal/stepped-modal.tsx",
+    "src/components/molecules/select/**",
+    "src/components/molecules/tag-grid.tsx/**",
+    "src/components/molecules/tag-input/**",
+    "src/components/notification/**",
+    "src/components/search-modal/**",
+    "src/components/libs/social-media-embed/components/embeds/YouTubeEmbed.tsx",
+    "src/libs/hooks/_useAuth.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"

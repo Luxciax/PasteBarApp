@@ -1,9 +1,7 @@
 import {
   ForwardedRef,
   forwardRef,
-  ForwardRefExoticComponent,
   HTMLAttributes,
-  Ref,
   useEffect,
   useRef,
   useState,
@@ -420,9 +418,7 @@ export function SplitView(props: SplitViewProps) {
 // Styled components
 // -----------------------------------------------------------------------------
 
-export const SplitPanePrimary: ForwardRefExoticComponent<
-  SplitPanePrimaryProps & { ref?: Ref<HTMLDivElement> }
-> = forwardRef(function SplitPanePrimary(
+export const SplitPanePrimary = forwardRef<HTMLDivElement, SplitPanePrimaryProps>(function SplitPanePrimary(
   props: SplitPanePrimaryProps,
   forwardedRef: ForwardedRef<HTMLDivElement>
 ) {
@@ -469,9 +465,7 @@ export const SplitPanePrimary: ForwardRefExoticComponent<
   )
 })
 
-export const SplitPaneSecondary: ForwardRefExoticComponent<
-  SplitPaneSecondaryProps & { ref?: Ref<HTMLDivElement> }
-> = forwardRef(function SplitPaneSecondary(
+export const SplitPaneSecondary = forwardRef<HTMLDivElement, SplitPaneSecondaryProps>(function SplitPaneSecondary(
   props: SplitPaneSecondaryProps,
   forwardedRef: ForwardedRef<HTMLDivElement>
 ) {

@@ -16,6 +16,7 @@ src-tauri/http-cacache/**/*
 pastebar_settings.yaml
 
 node_modules
+.tsbuild/
 packages/dist-ui/**/*
 dist-ssr
 build/**/*

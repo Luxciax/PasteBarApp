@@ -6,7 +6,7 @@
     "dev": "vite",
     "start": "npm run dev",
     "build": "vite build",
-    "build:ts": "tsc && vite build",
+    "build:ts": "tsc -b && vite build",
     "format": "npx prettier --write . --ignore-path .gitignore ",
     "taze": "taze major -I",
     "taze:minor": "taze minor -w",

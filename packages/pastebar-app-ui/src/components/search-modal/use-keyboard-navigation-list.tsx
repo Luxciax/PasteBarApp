@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-const offsetTopRelativeTo = (element, ancestor) => {
+const offsetTopRelativeTo = (element: HTMLElement, ancestor: HTMLElement) => {
   const elementCoords = element.getBoundingClientRect()
   const ancestorCoords = ancestor.getBoundingClientRect()
   return Math.abs(elementCoords.top - ancestorCoords.top)
 }
 
-const useKeyboardNavigationList = ({ length = 0 }) => {
+const useKeyboardNavigationList = ({ length = 0 }: { length?: number }) => {
   const ulRef = React.useRef<HTMLUListElement | null>(null)
   const liRefs = React.useRef<Array<HTMLLIElement | null>>([])
   const [selected, setSelected] = React.useState({ index: 0, source: 'hover' })
@@ -16,7 +16,7 @@ const useKeyboardNavigationList = ({ length = 0 }) => {
     return {
       'aria-activedescendant': `result-item-${selected}`,
       'aria-controls': 'results-list',
-      onKeyDown: e => {
+      onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'ArrowDown') {
           e.preventDefault()
           setSelected(({ index }) => ({
@@ -34,17 +34,20 @@ const useKeyboardNavigationList = ({ length = 0 }) => {
     }
   }
 
-  const getLIProps = ({ index, ...props }) => {
+  const getLIProps = ({
+    index,
+    ...props
+  }: React.LiHTMLAttributes<HTMLLIElement> & { index: number }) => {
     return {
       tabIndex: index,
       role: 'option',
       id: `result-item-${index}`,
       key: index,
-      'aria-selected': selected === index,
-      ref: el => {
+      'aria-selected': selected.index === index,
+      ref: (el: HTMLLIElement | null) => {
         liRefs.current[index] = el
       },
-      onMouseEnter: e => {
+      onMouseEnter: (_e: React.MouseEvent<HTMLLIElement>) => {
         setSelected({ index, source: 'hover' })
       },
       ...props,
@@ -60,7 +63,7 @@ const useKeyboardNavigationList = ({ length = 0 }) => {
     }
   }
 
-  const enterHandler = e => {
+  const enterHandler = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       setPressed(true)
     }

@@ -42,6 +42,7 @@ const appIdleEvents = ['mousemove', 'keydown', 'scroll', 'keypress', 'mousedown'
 
 function App() {
   useKeyPressAlt()
+  const isWindowsPlatform = navigator.userAgent.includes('Windows')
 
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -92,10 +93,11 @@ function App() {
   }, [isAppLocked.value])
 
   useEffect(() => {
-    appReady().then(res => {
+    appReady().then(async res => {
       if (res === null) return
 
       try {
+        const osType = await type()
         const {
           constants,
           settings,
@@ -257,11 +259,9 @@ function App() {
         })
         // Load the actual custom DB path after basic settings are initialized
         settingsStore.loadInitialCustomDbPath()
-        type().then(osType => {
-          if (osType === 'Windows_NT' && settings.copyPasteDelay?.valueInt === 0) {
-            settingsStore.updateSetting('copyPasteDelay', 2)
-          }
-        })
+        if (osType === 'Windows_NT' && settings.copyPasteDelay?.valueInt === 0) {
+          settingsStore.updateSetting('copyPasteDelay', 2)
+        }
 
         if (settings.isFirstRun?.valueBool) {
           appWindow.setSize(new LogicalSize(1105, 710))
@@ -284,34 +284,42 @@ function App() {
           isAppLocked.value = true
         }
 
-        if (settings.hotKeysShowHideMainAppWindow?.valueText) {
-          try {
-            register(settings.hotKeysShowHideMainAppWindow?.valueText, async () => {
-              if (document.hasFocus()) {
-                await appWindow.hide()
-              } else {
-                await appWindow.show()
-                await appWindow.setFocus()
-              }
-            }).catch(e => {
-              console.error(e)
-            })
-          } catch (e) {
-            console.error(e)
+        // Windows shortcuts are registered in the Tauri/Rust setup layer so they are
+        // available before the hidden WebView initializes (important for autostart).
+        if (osType !== 'Windows_NT') {
+          if (window.isMainWindow) {
+            await unregisterAll().catch(() => {})
           }
-        }
 
-        if (settings.hotKeysShowHideQuickPasteWindow?.valueText) {
-          try {
-            register(settings.hotKeysShowHideQuickPasteWindow?.valueText, async () => {
-              await uiStore.toggleHistoryQuickPasteWindow(
-                t('PasteBar Quick Paste', { ns: 'settings2' })
-              )
-            }).catch(e => {
+          if (settings.hotKeysShowHideMainAppWindow?.valueText) {
+            try {
+              register(settings.hotKeysShowHideMainAppWindow?.valueText, async () => {
+                if (document.hasFocus()) {
+                  await appWindow.hide()
+                } else {
+                  await appWindow.show()
+                  await appWindow.setFocus()
+                }
+              }).catch(e => {
+                console.error(e)
+              })
+            } catch (e) {
               console.error(e)
-            })
-          } catch (e) {
-            console.error(e)
+            }
+          }
+
+          if (settings.hotKeysShowHideQuickPasteWindow?.valueText) {
+            try {
+              register(settings.hotKeysShowHideQuickPasteWindow?.valueText, async () => {
+                await uiStore.toggleHistoryQuickPasteWindow(
+                  t('PasteBar Quick Paste', { ns: 'settings2' })
+                )
+              }).catch(e => {
+                console.error(e)
+              })
+            } catch (e) {
+              console.error(e)
+            }
           }
         }
 
@@ -479,7 +487,7 @@ function App() {
     })
 
     return () => {
-      if (window.isMainWindow) {
+      if (window.isMainWindow && !isWindowsPlatform) {
         unregisterAll()
       }
 
