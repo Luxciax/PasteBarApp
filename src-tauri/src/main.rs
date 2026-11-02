@@ -73,6 +73,8 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 use tauri::ClipboardManager;
+#[cfg(target_os = "windows")]
+use tauri::GlobalShortcutManager;
 use tauri::Manager;
 use tauri::SystemTray;
 use tauri::SystemTrayEvent;
@@ -117,6 +119,71 @@ struct SettingUpdatePayload {
   value_bool: Option<bool>,
   value_string: Option<String>,
   value_number: Option<i32>,
+}
+
+#[cfg(target_os = "windows")]
+fn register_windows_global_shortcuts(app_handle: &tauri::AppHandle) -> Result<(), String> {
+  let (main_hotkey, quick_paste_hotkey) = {
+    let app_settings = app_handle.state::<Mutex<HashMap<String, Setting>>>();
+    let settings_map = app_settings
+      .lock()
+      .map_err(|_| "Failed to lock app settings while registering hotkeys".to_string())?;
+
+    let main_hotkey = settings_map
+      .get("hotKeysShowHideMainAppWindow")
+      .and_then(|setting| setting.value_text.clone())
+      .filter(|value| !value.trim().is_empty());
+    let quick_paste_hotkey = settings_map
+      .get("hotKeysShowHideQuickPasteWindow")
+      .and_then(|setting| setting.value_text.clone())
+      .filter(|value| !value.trim().is_empty());
+
+    (main_hotkey, quick_paste_hotkey)
+  };
+
+  let mut shortcut_manager = app_handle.global_shortcut_manager();
+  shortcut_manager
+    .unregister_all()
+    .map_err(|error| format!("Failed to unregister existing global shortcuts: {}", error))?;
+
+  if let Some(hotkey) = main_hotkey {
+    let shortcut_app_handle = app_handle.clone();
+    shortcut_manager
+      .register(&hotkey, move || {
+        let Some(window) = shortcut_app_handle.get_window("main") else {
+          return;
+        };
+
+        if window.is_focused().unwrap_or(false) {
+          let _ = window.hide();
+          let _ = window.emit_all("window-events", "main-window-hide");
+        } else {
+          let _ = window.show();
+          let _ = window.unminimize();
+          let _ = window.set_focus();
+          let _ = window.emit_all("window-events", "main-window-show");
+        }
+      })
+      .map_err(|error| format!("Failed to register main-window hotkey '{}': {}", hotkey, error))?;
+  }
+
+  if let Some(hotkey) = quick_paste_hotkey {
+    let shortcut_app_handle = app_handle.clone();
+    shortcut_manager
+      .register(&hotkey, move || {
+        let app_handle = shortcut_app_handle.clone();
+        tauri::async_runtime::spawn(async move {
+          if let Err(error) =
+            open_quickpaste_window(app_handle, "PasteBar Quick Paste".to_string()).await
+          {
+            eprintln!("Failed to toggle Quick Paste from global hotkey: {}", error);
+          }
+        });
+      })
+      .map_err(|error| format!("Failed to register Quick Paste hotkey '{}': {}", hotkey, error))?;
+  }
+
+  Ok(())
 }
 
 #[tauri::command]
@@ -171,8 +238,17 @@ fn get_device_id() -> Result<String, String> {
 
 #[tauri::command]
 fn update_setting(setting: Setting, app_handle: tauri::AppHandle) -> Result<String, String> {
-  match insert_or_update_setting_by_name(&setting, app_handle) {
-    Ok(result) => Ok(result),
+  match insert_or_update_setting_by_name(&setting, app_handle.clone()) {
+    Ok(result) => {
+      #[cfg(target_os = "windows")]
+      if setting.name == "hotKeysShowHideMainAppWindow"
+        || setting.name == "hotKeysShowHideQuickPasteWindow"
+      {
+        register_windows_global_shortcuts(&app_handle)?;
+      }
+
+      Ok(result)
+    }
     Err(err) => Err(err.to_string()),
   }
 }
@@ -1127,6 +1203,11 @@ async fn main() {
       }
 
       let window = window_builder.build()?;
+
+      #[cfg(target_os = "windows")]
+      if let Err(error) = register_windows_global_shortcuts(&app.app_handle()) {
+        eprintln!("Failed to register Windows global shortcuts during startup: {}", error);
+      }
 
       // set dynamic title for window for Pro version
       window.set_title("PasteBar").unwrap();
