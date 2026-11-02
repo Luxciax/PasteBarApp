@@ -26,6 +26,45 @@ use std::{thread, time::Duration};
 use tauri::{self, AppHandle};
 use tauri::{ClipboardManager, Manager};
 
+#[cfg(target_os = "windows")]
+const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 5;
+#[cfg(target_os = "windows")]
+const CLIPBOARD_WRITE_RETRY_DELAY_MS: u64 = 20;
+
+fn write_text_to_clipboard(app_handle: &AppHandle, text: String) -> Result<(), String> {
+  #[cfg(target_os = "windows")]
+  {
+    let mut last_error = None;
+
+    for attempt in 0..CLIPBOARD_WRITE_RETRY_ATTEMPTS {
+      let mut manager = app_handle.clipboard_manager();
+      match manager.write_text(text.clone()) {
+        Ok(_) => return Ok(()),
+        Err(error) => {
+          last_error = Some(error.to_string());
+          if attempt + 1 < CLIPBOARD_WRITE_RETRY_ATTEMPTS {
+            thread::sleep(Duration::from_millis(CLIPBOARD_WRITE_RETRY_DELAY_MS));
+          }
+        }
+      }
+    }
+
+    return Err(format!(
+      "Failed to write to clipboard after {} attempts: {}",
+      CLIPBOARD_WRITE_RETRY_ATTEMPTS,
+      last_error.unwrap_or_else(|| "unknown clipboard error".to_string())
+    ));
+  }
+
+  #[cfg(not(target_os = "windows"))]
+  {
+    let mut manager = app_handle.clipboard_manager();
+    manager
+      .write_text(text)
+      .map_err(|error| format!("Failed to write to clipboard: {}", error))
+  }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 
 pub enum ClipFormKeyPress {
@@ -84,22 +123,21 @@ pub struct TemplateOption {
 
 #[tauri::command]
 pub fn copy_text(app_handle: AppHandle, text: String) -> String {
-  let mut manager = app_handle.clipboard_manager();
-
-  manager
-    .write_text(text)
-    .expect("failed to write to clipboard");
-
-  "ok".to_string()
+  match write_text_to_clipboard(&app_handle, text) {
+    Ok(_) => "ok".to_string(),
+    Err(error) => {
+      eprintln!("{}", error);
+      error
+    }
+  }
 }
 
 #[tauri::command]
 pub fn copy_paste(app_handle: AppHandle, text: String, delay: i32) -> String {
-  let mut manager = app_handle.clipboard_manager();
-
-  manager
-    .write_text(text)
-    .expect("failed to write to clipboard");
+  if let Err(error) = write_text_to_clipboard(&app_handle, text) {
+    eprintln!("{}", error);
+    return error;
+  }
 
   #[cfg(target_os = "macos")]
   fn query_accessibility_permissions() -> bool {
@@ -130,8 +168,6 @@ pub fn copy_history_item(app_handle: AppHandle, history_id: String) -> String {
     None => return "History item not found".to_string(),
   };
 
-  let mut manager = app_handle.clipboard_manager();
-
   if let (Some(true), Some(false)) = (history_item.is_image, history_item.is_link) {
     let base64_image = match history_item.image_path_full_res {
       Some(path) => {
@@ -161,11 +197,11 @@ pub fn copy_history_item(app_handle: AppHandle, history_id: String) -> String {
       None => return "History item value is missing".to_string(),
     };
 
-    match manager.write_text(value) {
+    match write_text_to_clipboard(&app_handle, value) {
       Ok(_) => "ok".to_string(),
       Err(e) => {
         eprintln!("Failed to write to clipboard: {}", e);
-        "Failed to write to clipboard".to_string()
+        e
       }
     }
   }
@@ -173,12 +209,15 @@ pub fn copy_history_item(app_handle: AppHandle, history_id: String) -> String {
 
 #[tauri::command]
 pub fn copy_paste_history_item(app_handle: AppHandle, history_id: String, delay: i32) -> String {
-  copy_history_item(app_handle, history_id);
+  let copy_result = copy_history_item(app_handle, history_id);
+  if copy_result != "ok" {
+    return copy_result;
+  }
+
   paste_clipboard(delay)
 }
 
 pub fn write_image_to_clipboard(base64_image: String) -> Result<(), String> {
-  let mut clipboard = Clipboard::new().unwrap();
   let decoded = base64::decode(&base64_image).map_err(|err| err.to_string())?;
   let img = image::load_from_memory(&decoded).map_err(|err| err.to_string())?;
   let pixels = img
@@ -192,10 +231,41 @@ pub fn write_image_to_clipboard(base64_image: String) -> Result<(), String> {
     width: img.width() as usize,
     bytes: Cow::Owned(pixels),
   };
-  clipboard
-    .set_image(img_data)
-    .map_err(|err| err.to_string())?;
-  Ok(())
+
+  #[cfg(target_os = "windows")]
+  {
+    let mut last_error = None;
+
+    for attempt in 0..CLIPBOARD_WRITE_RETRY_ATTEMPTS {
+      let image_data = ImageData {
+        height: img_data.height,
+        width: img_data.width,
+        bytes: Cow::Owned(img_data.bytes.as_ref().to_vec()),
+      };
+
+      match Clipboard::new().and_then(|mut clipboard| clipboard.set_image(image_data)) {
+        Ok(_) => return Ok(()),
+        Err(error) => {
+          last_error = Some(error.to_string());
+          if attempt + 1 < CLIPBOARD_WRITE_RETRY_ATTEMPTS {
+            thread::sleep(Duration::from_millis(CLIPBOARD_WRITE_RETRY_DELAY_MS));
+          }
+        }
+      }
+    }
+
+    return Err(format!(
+      "Failed to write image to clipboard after {} attempts: {}",
+      CLIPBOARD_WRITE_RETRY_ATTEMPTS,
+      last_error.unwrap_or_else(|| "unknown clipboard error".to_string())
+    ));
+  }
+
+  #[cfg(not(target_os = "windows"))]
+  {
+    let mut clipboard = Clipboard::new().map_err(|err| err.to_string())?;
+    clipboard.set_image(img_data).map_err(|err| err.to_string())
+  }
 }
 
 #[tauri::command(async)]
