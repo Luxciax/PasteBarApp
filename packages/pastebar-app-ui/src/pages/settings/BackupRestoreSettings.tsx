@@ -70,11 +70,19 @@ export default function BackupRestoreSettings() {
 
   const { relaunchApp } = useAtomValue(settingsStoreAtom)
 
-  const [includeImages, setIncludeImages] = useState(true)
+  const [includeImages, setIncludeImages] = useState(() => {
+    const saved = localStorage.getItem('backupIncludeImages')
+    return saved !== null ? saved === 'true' : true
+  })
   const [backupOnRestore, setBackupOnRestore] = useState(() => {
     const saved = localStorage.getItem('backupOnRestore')
     return saved !== null ? JSON.parse(saved) : true
   })
+
+  // Persist backup preferences across application restarts.
+  useEffect(() => {
+    localStorage.setItem('backupIncludeImages', String(includeImages))
+  }, [includeImages])
 
   // Save backup on restore preference to localStorage
   useEffect(() => {
