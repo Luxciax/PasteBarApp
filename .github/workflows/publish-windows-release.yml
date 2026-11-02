@@ -1,0 +1,63 @@
+name: Publish Windows Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Windows CI run ID containing PasteBar-Windows-CI
+        required: true
+        type: string
+      tag:
+        description: Release tag
+        required: true
+        type: string
+      target_sha:
+        description: Commit SHA the release should point to
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows installer artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          mkdir -p release
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n PasteBar-Windows-CI -D release
+          find release -type f -maxdepth 3 -print
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+        run: |
+          installer="$(find release -type f -name '*.exe' -print -quit)"
+          test -n "$installer"
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+            exit 1
+          fi
+          gh release create "$TAG" "$installer" \
+            -R "$GITHUB_REPOSITORY" \
+            --target "$TARGET_SHA" \
+            --title "PasteBarApp Fixed $TAG" \
+            --notes "Windows NSIS build from commit $TARGET_SHA.
+
+Includes the verified upstream bug fixes merged in PR #2:
+- Quick Paste multi-monitor positioning
+- Find in History focus retention
+- Clip/Board title mouse editing
+- Backup include-images preference persistence
+- Application exclusions applied before clipboard access
+
+Build source: Windows CI run ${{ inputs.run_id }}.
+
+The CI installer is unsigned, so Windows may show an unknown publisher or SmartScreen prompt."
