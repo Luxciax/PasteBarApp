@@ -360,6 +360,7 @@ export function ClipEditName({
               autoFocus
               className="bg-white rounded-md text-sm font-semibold w-full min-w-[120px]"
               placeholder={t('Enter clip name', { ns: 'dashboard' })}
+              onMouseDown={e => e.stopPropagation()}
               onBlur={async () => {
                 if (
                   !renameEdit.value.length ||
