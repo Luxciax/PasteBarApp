@@ -340,17 +340,37 @@ export function useGetClipboardHistoryById() {
 export function useDeleteClipboardHistoryByIds() {
   const queryClient = useQueryClient()
 
-  const { mutate: deleteClipboardHistoryByIds } = useInvokeMutation<
-    Record<UniqueIdentifier, unknown>,
+  const { mutateAsync: deleteClipboardHistoryByIds } = useInvokeMutation<
+    { historyIds: UniqueIdentifier[] },
     UniqueIdentifier
   >('delete_clipboard_history_by_ids', {
-    onSuccess: data => {
+    onSuccess: (data, variables) => {
       if (data === 'ok') {
+        const deletedIds = new Set(variables.historyIds)
+
+        // Filtered/search queries are disabled-by-default and therefore do not
+        // automatically refetch on invalidate. Update their cached arrays
+        // immediately so deleted items disappear from the current view.
+        queryClient.setQueriesData<ClipboardHistoryItem[]>(
+          { queryKey: ['find_clipboard_histories_by_value_or_filters'] },
+          oldItems => oldItems?.filter(item => !deletedIds.has(item.historyId))
+        )
+        queryClient.setQueriesData<ClipboardHistoryItem[]>(
+          { queryKey: ['search_clipboard_histories_by_value_or_filters'] },
+          oldItems => oldItems?.filter(item => !deletedIds.has(item.historyId))
+        )
+
         queryClient.invalidateQueries({
           queryKey: ['get_clipboard_history'],
         })
         queryClient.invalidateQueries({
           queryKey: ['get_clipboard_history_pinned'],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['find_clipboard_histories_by_value_or_filters'],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['search_clipboard_histories_by_value_or_filters'],
         })
 
         if (!window.isQuickPasteWindow) {
