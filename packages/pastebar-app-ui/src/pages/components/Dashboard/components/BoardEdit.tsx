@@ -177,6 +177,7 @@ export function BoardEdit({
                 autoFocus
                 className="bg-white rounded-md text-sm font-semibold max-w-[200px] min-w-[120px]"
                 placeholder={t('Enter board title', { ns: 'dashboard' })}
+                onMouseDown={e => e.stopPropagation()}
                 onKeyDown={async e => {
                   e.stopPropagation()
                   if (e.key === 'Escape') {
@@ -203,9 +204,7 @@ export function BoardEdit({
                 }}
                 defaultValue={boardName}
                 onFocus={e => {
-                  if (boardName === t('New Board', { ns: 'dashboard' })) {
-                    e.target.select()
-                  }
+                  e.target.select()
                 }}
                 onChange={e => {
                   if (showBoardNameNotSavedError.value) {

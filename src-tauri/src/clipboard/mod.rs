@@ -93,6 +93,35 @@ where
       }
     }
 
+    // Resolve the source application before opening the clipboard. App exclusions
+    // should keep PasteBar out of that application's clipboard flow entirely.
+    let copied_from_app = match get_active_window() {
+      Ok(active_window) => Some(active_window.app_name),
+      Err(()) => None,
+    };
+
+    let is_source_app_excluded = settings_map
+      .get("isExclusionAppListEnabled")
+      .and_then(|setting| setting.value_bool)
+      .unwrap_or(false)
+      && copied_from_app.as_ref().is_some_and(|app_name| {
+        settings_map
+          .get("historyExclusionAppList")
+          .and_then(|setting| setting.value_text.as_ref())
+          .map(|list| {
+            list.lines()
+              .any(|item| item.trim().eq_ignore_ascii_case(app_name))
+          })
+          .unwrap_or(false)
+      });
+
+    if is_source_app_excluded {
+      debug_output(|| {
+        println!("Source app is excluded from clipboard capture; skipping clipboard access");
+      });
+      return CallbackResult::Next;
+    }
+
     let clipboard_text = {
       let clipboard_manager = match self.clipboard_manager.lock() {
         Ok(manager) => manager,
@@ -119,11 +148,6 @@ where
       .get("isAutoFavoriteOnDoubleCopyEnabled")
       .and_then(|s| s.value_bool)
       .unwrap_or(true);
-
-    let copied_from_app = match get_active_window() {
-      Ok(active_window) => Some(active_window.app_name),
-      Err(()) => None,
-    };
 
     if let Ok(mut text) = clipboard_text {
       let trim_text_history = settings_map
