@@ -342,7 +342,7 @@ export function useDeleteClipboardHistoryByIds() {
 
   const { mutateAsync: deleteClipboardHistoryByIds } = useInvokeMutation<
     { historyIds: UniqueIdentifier[] },
-    UniqueIdentifier
+    string
   >('delete_clipboard_history_by_ids', {
     onSuccess: (data, variables) => {
       if (data === 'ok') {
