@@ -29,27 +29,36 @@ export const useCopyPasteHistoryItem = ({
 ] => {
   const { copyPasteSequencePinnedDelay, copyPasteSequenceIsReversOrder } =
     useAtomValue(settingsStoreAtom)
+  const copyHistoryItem = (historyId: UniqueIdentifier) => {
+    invoke('copy_history_item', { historyId })
+      .then(res => {
+        if (res === 'ok') {
+          const finishCopy = () => {
+            requestAnimationFrame(() => {
+              copiedItem.value = ''
+              onCopied()
+            })
+          }
+          if (delay > 0) {
+            setTimeout(finishCopy, delay)
+          } else {
+            finishCopy()
+          }
+        } else {
+          copiedItem.value = ''
+          console.error('Failed to copy history item', res)
+        }
+      })
+      .catch(err => {
+        copiedItem.value = ''
+        console.error('Failed to copy history item', err)
+      })
+  }
+
   const handleCopy = (historyId: UniqueIdentifier) => {
     if (historyId && !copiedItem.value) {
       copiedItem.value = historyId
-      setTimeout(() => {
-        invoke('copy_history_item', { historyId })
-          .then(res => {
-            if (res === 'ok') {
-              requestAnimationFrame(() => {
-                copiedItem.value = ''
-                onCopied()
-              })
-            } else {
-              copiedItem.value = ''
-              console.error('Failed to copy history item', res)
-            }
-          })
-          .catch(err => {
-            copiedItem.value = ''
-            console.error('Failed to copy history item', err)
-          })
-      }, delay)
+      copyHistoryItem(historyId)
     }
   }
 
