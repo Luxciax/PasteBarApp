@@ -2079,6 +2079,12 @@ export default function ClipboardHistoryPage() {
                               autoFocus={searchTerm.length > 0}
                               key="search-history"
                               type="search"
+                              onFocus={() => {
+                                // A keyboard-selected history row can steal focus again when
+                                // filtered results remount. Clear keyboard navigation as soon
+                                // as the user enters the search field.
+                                resetKeyboardNavigation()
+                              }}
                               onChange={e => {
                                 setSearchTerm(e.target.value)
                               }}
