@@ -38,26 +38,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
           TARGET_SHA: ${{ inputs.target_sha }}
+          RUN_ID: ${{ inputs.run_id }}
         run: |
           installer="$(find release -type f -name '*.exe' -print -quit)"
           test -n "$installer"
-          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists"
-            exit 1
-          fi
-          gh release create "$TAG" "$installer" \
-            -R "$GITHUB_REPOSITORY" \
-            --target "$TARGET_SHA" \
-            --title "PasteBarApp Fixed $TAG" \
-            --notes "Windows NSIS build from commit $TARGET_SHA.
-
-Includes the verified upstream bug fixes merged in PR #2:
-- Quick Paste multi-monitor positioning
-- Find in History focus retention
-- Clip/Board title mouse editing
-- Backup include-images preference persistence
-- Application exclusions applied before clipboard access
-
-Build source: Windows CI run ${{ inputs.run_id }}.
-
-The CI installer is unsigned, so Windows may show an unknown publisher or SmartScreen prompt."
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "Release $TAG already exists"; exit 1; fi
+          notes="Windows NSIS build from commit $TARGET_SHA. Includes verified fixes from PR #2: multi-monitor Quick Paste positioning, history search focus, Clip/Board title mouse editing, backup image preference persistence, and app exclusions before clipboard access. Build source: Windows CI run $RUN_ID. CI installer is unsigned; Windows may show an unknown publisher or SmartScreen prompt."
+          gh release create "$TAG" "$installer" -R "$GITHUB_REPOSITORY" --target "$TARGET_SHA" --title "PasteBarApp Fixed $TAG" --notes "$notes"
